@@ -320,35 +320,14 @@
     document.getElementById('screen-loading').style.display = 'flex';
     document.getElementById('screen-loading').classList.add('active');
 
-    const prompt = `Eres un experto DJ y curador de música latina y en español. El usuario se siente: "${moodVal}". Quiere escuchar: "${genreVal}".
-
-Genera una playlist de EXACTAMENTE 25 canciones perfectas para ese estado de ánimo y estilo musical. Varía entre canciones muy conocidas y algunas joyas menos populares.
-
-RESPONDE SOLO con JSON válido, sin texto extra, sin markdown, sin backticks:
-{
-  "playlist_title": "título creativo en español máximo 4 palabras",
-  "mood_label": "1-2 palabras del mood",
-  "emoji": "un emoji que represente la playlist",
-  "songs": [
-    {"title": "nombre exacto", "artist": "artista", "year": "año"},
-    ... (25 canciones total)
-  ]
-}`;
-
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch(`${SERVER}/generate-playlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: prompt }]
-        })
+        body: JSON.stringify({ mood: moodVal, genre: genreVal })
       });
-      const data = await res.json();
-      const text = data.content.map(i => i.text || '').join('');
-      const clean = text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(clean);
+      const parsed = await res.json();
+      if (parsed.error) throw new Error(parsed.error);
       currentSongs = parsed.songs || [];
       renderPlaylist(parsed);
     } catch(e) {
